@@ -12,47 +12,66 @@ public class Charecter : MonoBehaviour
 	public float sensitivity = 10f;
     public float maxYAngle = 80f;
     private Vector3 currentRotation;
+    private bool isPause = false;
+    private GameObject Menu;
+
     // Start is called before the first frame update
     void Start()
     {
         currentRotation = transform.eulerAngles;
+        Menu = GameObject.Find("Menu").gameObject;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetAxis("Vertical") != 0)
-	    {
-	        //camera.transform.Translate(Vector3.forward * FlySpeed * Input.GetAxis("Vertical"));
-	        transform.Translate(Vector3.forward * FlySpeed * Input.GetAxis("Vertical"));
-	    }
-	   
-	   
-	    if (Input.GetAxis("Horizontal") != 0)
-	    {
-	        //camera.transform.Translate(Vector3.right * FlySpeed * Input.GetAxis("Horizontal"));
-	        transform.Translate(Vector3.right * FlySpeed * Input.GetAxis("Horizontal"));
-	    }
+        if (Input.GetKeyDown(KeyCode.Escape))
+            isPause = !isPause;
 
-	    //ensure these stay this way
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
- 
-/*        var mouseDelta = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
-        var targetOrientation = Quaternion.Euler(targetDirection);
- 
+        if(!isPause)
+        {
+        	Menu.SetActive(false);
+        	
+	        if (Input.GetAxis("Vertical") != 0)
+		    {
+		        //camera.transform.Translate(Vector3.forward * FlySpeed * Input.GetAxis("Vertical"));
+		        transform.Translate(Vector3.forward * FlySpeed * Input.GetAxis("Vertical"));
+		    }
+		   
+		   
+		    if (Input.GetAxis("Horizontal") != 0)
+		    {
+		        //camera.transform.Translate(Vector3.right * FlySpeed * Input.GetAxis("Horizontal"));
+		        transform.Translate(Vector3.right * FlySpeed * Input.GetAxis("Horizontal"));
+		    }
 
-        var xRotation = Quaternion.AngleAxis(-mouseDelta.y, Vector3.right);
-        camera.transform.localRotation *= xRotation * targetOrientation;
-        var yRotation = Quaternion.AngleAxis(mouseDelta.x, transform.InverseTransformDirection(Vector3.up));
-        camera.transform.localRotation *= yRotation;
-*/
+		    //ensure these stay this way
+	        Cursor.lockState = CursorLockMode.Locked;
+	        Cursor.visible = false;
+	 
+	/*        var mouseDelta = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
+	        var targetOrientation = Quaternion.Euler(targetDirection);
+	 
 
-        currentRotation.x += Input.GetAxis("Mouse X");
-        currentRotation.y -= Input.GetAxis("Mouse Y");
-        currentRotation.x = Mathf.Repeat(currentRotation.x, 360);
-        currentRotation.y = Mathf.Clamp(currentRotation.y, -maxYAngle, maxYAngle);
-        //camera.transform.rotation = Quaternion.Euler(currentRotation.y,currentRotation.x,0);
-        transform.rotation = Quaternion.Euler(currentRotation.y,currentRotation.x,0);
+	        var xRotation = Quaternion.AngleAxis(-mouseDelta.y, Vector3.right);
+	        camera.transform.localRotation *= xRotation * targetOrientation;
+	        var yRotation = Quaternion.AngleAxis(mouseDelta.x, transform.InverseTransformDirection(Vector3.up));
+	        camera.transform.localRotation *= yRotation;
+	*/
+
+	        currentRotation.x += Input.GetAxis("Mouse X");
+	        currentRotation.y -= Input.GetAxis("Mouse Y");
+	        currentRotation.x = Mathf.Repeat(currentRotation.x, 360);
+	        currentRotation.y = Mathf.Clamp(currentRotation.y, -maxYAngle, maxYAngle);
+	        //camera.transform.rotation = Quaternion.Euler(currentRotation.y,currentRotation.x,0);
+	        transform.rotation = Quaternion.Euler(currentRotation.y,currentRotation.x,0);        	
+        }
+        else
+        {
+        	Menu.SetActive(true);
+        	Cursor.lockState = CursorLockMode.None;
+	        Cursor.visible = true;
+        }
+
     }
 }
