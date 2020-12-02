@@ -130,7 +130,7 @@ public class GameServer : MonoBehaviour
                         Client client = new Client(senderRemote);
                         int id = clients.IndexOf(client);
                         if(id > -1)
-                            clients[id].lastTimeServer = Time.time;
+                            clients[id].lastTimeServer = Time.time - clients[id].lastTimeServer;
                     }
                     break;
                 }
