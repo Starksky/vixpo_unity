@@ -53,8 +53,8 @@ using UnityEngine.UI;
 	}
 	public void Update()
 	{
-        if (_object == null) return;
-		if(exit) GameObject.Destroy(_object);
+        if (player == null) return;
+		if(exit) GameObject.Destroy(player);
 
         player.transform.localPosition = Vector3.Lerp(player.transform.localPosition, transform.position, 1);
 	 	player.transform.rotation = Quaternion.Lerp(player.transform.rotation, Quaternion.Euler(transform.rotation), 1);
@@ -71,7 +71,7 @@ public class ResponseObjects
 {
 	public int msgid;
 	public List<Player> players;
-    public Response(){ players = new List<Player>(); }
+    public ResponseObjects() { players = new List<Player>(); }
 }
 public class ResponseObject
 {
@@ -86,12 +86,15 @@ public class Game : MonoBehaviour
     public UdpClient client;
 
     [HideInInspector] public bool isConnected = false;
+    [HideInInspector] public bool isConnecting = false;
 
     public int Port = 22023;
     public string IP = "78.24.222.166";
     public GameObject TemplatePlayer;
     public InputField Name;
 
+    private float TimerUpdate = 1f; // 1 sec
+    private float TimerReconnect = 3f; // 1 sec
     private GameObject scene;
     private GameObject player;
     private Object playerSync;
@@ -100,7 +103,7 @@ public class Game : MonoBehaviour
 
     public void SaveName()
     {
-    	playerSync.name = name.text;
+    	playerSync.name = Name.text;
     	player.transform.GetChild(1).GetComponent<TextMesh>().text = playerSync.name;
     }
 
@@ -110,24 +113,23 @@ public class Game : MonoBehaviour
     		if (!isConnected) return;
     	byte[] sendBytes = new UTF8Encoding(true).GetBytes(json);
 	    client.Send(sendBytes, sendBytes.Length);
+        print(json);
     }
 
     // Start is called before the first frame update
     void Start()
     {
     	players = new List<Player>();
-        answers = new List<AnswerObject>();
-        objects = new List<Object>();
 
         scene = GameObject.Find("Game").gameObject;
-    	_player = GameObject.Find("Player").gameObject;
+        player = GameObject.Find("Player").gameObject;
 
-        player = new Object();
-    	player.position = _player.transform.localPosition;
-    	player.rotation = _player.transform.eulerAngles;
-    	player.name = name.text;
+        playerSync = new Object();
+        playerSync.position = player.transform.localPosition;
+        playerSync.rotation = player.transform.eulerAngles;
+        playerSync.name = Name.text;
 
-    	client = new UdpClient(ip, port);
+    	client = new UdpClient(IP, Port);
 
         // create thread for reading UDP messages
         readThread = new Thread(new ThreadStart(ReceiveData));
@@ -139,10 +141,31 @@ public class Game : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!isConnected)
+        if(!isConnecting)
         {
-        	string request = "{\"msgid\":10000}";
-	    	Send(request, false);  	
+            string request = "{\"msgid\":10000}";
+            Send(request, false);
+            isConnecting = true;
+        }
+        if(isConnected)
+        {
+            if (TimerUpdate <= 0)
+            {
+                string request = "{\"msgid\":20000}";
+                Send(request, false);
+                TimerUpdate = 1f;
+            }
+            else TimerUpdate -= Time.fixedDeltaTime;
+        }
+        else
+        {
+            TimerReconnect -= Time.fixedDeltaTime;
+        }
+
+        if (TimerReconnect <= 0)
+        {
+            isConnecting = false;
+            TimerReconnect = 3f;
         }
     }
 
@@ -167,6 +190,7 @@ public class Game : MonoBehaviour
                 	//Connected user
                 	case 10000:
                 	{
+                        print(text);
                 		isConnected = true;
                 	}
                 	break;
@@ -179,21 +203,20 @@ public class Game : MonoBehaviour
                 	case 10002: //remove player
                 	{
                 		ResponseObject response_object = JsonUtility.FromJson<ResponseObject>(text);
-                		int id = players.IndexOf(response_object.player);
-                		if(id > -1)
+                        int id = players.FindIndex(s => s.ip == response_object.player.ip);
+                        if (id > -1)
                 			players[id].Exit();
                 	}
                 	break;
                 	case 10003: //update player
                 	{
                 		ResponseObject response_object = JsonUtility.FromJson<ResponseObject>(text);
-                		int id = players.IndexOf(response_object.player);
-                		if(id > -1)
+                        int id = players.FindIndex(s => s.ip == response_object.player.ip);
+                        if (id > -1)
                 			players[id].transform.Set(response_object.player.transform);
                 	}
                 	break;
                 }
-
             }
             catch (Exception err)
             {

@@ -1503,17 +1503,16 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1834692933}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3516150d9754135b3b33e960e64f8fb5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  port: 22023
-  ip: 78.24.222.166
-  templatePlayer: {fileID: 5556711691806753932, guid: 159fb88cea09258899ea9dce23706d40, type: 3}
-  name: {fileID: 913460307}
-  id_player: 0
   isConnected: 0
+  Port: 22023
+  IP: 78.24.222.166
+  TemplatePlayer: {fileID: 5556711691806753932, guid: 159fb88cea09258899ea9dce23706d40, type: 3}
+  Name: {fileID: 913460307}
 --- !u!114 &1834692936
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1521,7 +1520,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1834692933}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2b4c7fcf4324569ca25af4676bc59e7, type: 3}
   m_Name: 

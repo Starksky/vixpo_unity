@@ -68,7 +68,28 @@ public class GameServer : MonoBehaviour
     {
         stopThread();
     }
+    void Update()
+    {
+        string response = "";
 
+        for (int id = 0; id < clients.Count; id++)
+        {
+            if (GetTimestamp() - clients[id].lastTimeServer > 3)
+            {
+                for (int i = 0; i < clients.Count; i++)
+                {
+                    if (i == id) continue;
+
+                    string json_client = JsonUtility.ToJson(clients[id]);
+                    response = "{\"msgid\":10002, \"client\":\"" + json_client + "\"}";
+                    clients[id].Send(server, response);
+                }
+                string ip = clients[id].ip;
+                clients.Remove(clients[id]);
+                print("Exit client -> " + ip);
+            }
+        }
+    }
     // Stop reading UDP messages
     private void stopThread()
     {
@@ -78,12 +99,17 @@ public class GameServer : MonoBehaviour
         }
         server.Close();
     }
-
+    private long GetTimestamp()
+    {
+        return (long)(new TimeSpan(DateTime.Now.Ticks)).TotalSeconds;
+    }
     // receive thread function
     private void ReceiveData()
     {
         while (true)
         {
+            string response = "";
+
             try
             {
                 byte[] data = new byte[1024];
@@ -97,14 +123,18 @@ public class GameServer : MonoBehaviour
                 string text = new UTF8Encoding(true).GetString(data);
 
                 Request request = JsonUtility.FromJson<Request>(text);
-                string response = "";
+                
 
                 switch(request.msgid)
                 {
                     case 10000:
                     {
                         Client client = new Client(senderRemote);
-                        if(clients.IndexOf(client) > -1) 
+                        client.lastTimeServer = GetTimestamp();
+
+                        int id = clients.FindIndex(s => s.ip == client.ip);
+
+                        if (id > -1) 
                         {
                             print("Client already added -> " + ((IPEndPoint)senderRemote).Address.ToString());
                             break;
@@ -114,11 +144,11 @@ public class GameServer : MonoBehaviour
                         response = "{\"msgid\":10000, \"clients\":\""+json_clients+"\"}";
                         client.Send(server, response);
 
-                        for(int id = 0; id < clients.Count; id++)
+                        for(int i = 0; i < clients.Count; i++)
                         {
                             string json_client = JsonUtility.ToJson(client);
                             response = "{\"msgid\":10001, \"client\":\""+json_client+"\"}";
-                            clients[id].Send(server, response);
+                            clients[i].Send(server, response);
                         }
 
                         clients.Add(client);
@@ -128,27 +158,12 @@ public class GameServer : MonoBehaviour
                     case 20000:
                     {
                         Client client = new Client(senderRemote);
-                        int id = clients.IndexOf(client);
+                        int id = clients.FindIndex(s => s.ip == client.ip);
                         if(id > -1)
-                            clients[id].lastTimeServer = Time.time - clients[id].lastTimeServer;
+                            clients[id].lastTimeServer = GetTimestamp();
                     }
                     break;
                 }
-
-                for(int id = 0; id < clients.Count; id++)
-                {
-                    if(clients[id].lastTimeServer < Time.time + 3000)
-                        clients.Remove(client);
-                        for(int id = 0; id < clients.Count; id++)
-                        {
-                            string json_client = JsonUtility.ToJson(client);
-                            response = "{\"msgid\":10002, \"client\":\""+json_client+"\"}";
-                            clients[id].Send(server, response);
-                        }
-                        print("Exit client -> " + ((IPEndPoint)senderRemote).Address.ToString());
-                }
-
-
             }
             catch (Exception err)
             {
