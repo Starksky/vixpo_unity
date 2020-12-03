@@ -10,8 +10,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+
 [Serializable] public class Client{
     private bool _isAdd = false;
+    private bool _isExit = false;
     private EndPoint point;
 
     public string ip;
@@ -22,7 +24,7 @@ using UnityEngine.UI;
 
     public Client(EndPoint _p){
         point = _p; 
-        ip = ((IPEndPoint)_p).Address.ToString(); 
+        ip = ((IPEndPoint)_p).Address.ToString() + " : " + ((IPEndPoint)_p).Port.ToString(); 
         transform = new Object();
         transform.name = ip;
     }
@@ -34,8 +36,9 @@ using UnityEngine.UI;
     }
 
     public void Add(GameObject _player){ _isAdd = true; player = _player; }
-    public void Remove(){ GameObject.Destroy(player); Debug.Log("remove player"); }
+    public void Remove(){ GameObject.Destroy(player); _isExit = true; Debug.Log("remove player");  }
     public bool isAdd(){ return _isAdd; }
+    public bool isExit() { return _isExit; }
 }
 
 public class ReceiveRequest{
@@ -50,15 +53,13 @@ public class GameServer : MonoBehaviour
     public Socket server;
     Thread serverThread;
 
+    [HideInInspector] public bool isConnected = false;
     public int Port = 22023;
-    public GameObject TemplatePlayer; 
-    
-    private List<Client> clients;
-    private GameObject scene;
+    public GameObject TemplatePlayer;
 
-    private struct Request{
-        public int msgid;
-    }
+    public List<Client> clients;
+
+    private GameObject scene;
 
     private long GetTimestamp()
     {
@@ -96,6 +97,8 @@ public class GameServer : MonoBehaviour
         serverThread = new Thread(new ThreadStart(ReceiveData));
         serverThread.IsBackground = true;
         serverThread.Start();
+
+        isConnected = true;
     }
 
 	// Unity Application Quit Function
@@ -180,7 +183,39 @@ public class GameServer : MonoBehaviour
             }
         }
     }
+    private string ClientsJsonTo()
+    {
+        string result = "[";
+        for (int i = 0; i < clients.Count; i++)
+        {
+            result += JsonUtility.ToJson(clients[i]);
+            if (i != clients.Count - 1)
+                result += ",";
+        }
+            
+        result += "]";
+        return result;
+    }
+    private string ObjectsJsonTo()
+    {
+        string result = "[";
+        GameObject[] objects = GameObject.FindGameObjectsWithTag("SyncServer");
+        for (int i = 0; i < objects.Length; i++)
+        {
+            Rigidbody body = objects[i].GetComponent<Rigidbody>();
+            Object obj = new Object();
+            obj.name = objects[i].name;
+            obj.position = body.position;
+            obj.rotation = body.rotation.eulerAngles;
+            result += JsonUtility.ToJson(obj);
 
+            if(i != objects.Length - 1)
+                result += ",";
+        }
+            
+        result += "]";
+        return result;
+    }
     private void ReadData(ReceiveRequest receive)
     {
         try
@@ -200,35 +235,39 @@ public class GameServer : MonoBehaviour
 
                     if (id > -1) 
                     {
-                        print("Client already added -> " + ((IPEndPoint)receive.point).Address.ToString());
+                        print("Client already added -> " + client.ip);
                         break;
                     }
-                    
-                    string json_clients = JsonUtility.ToJson(clients);
-                    response = "{\"msgid\":10000, \"ip\":\""+ ((IPEndPoint)receive.point).Address.ToString() +"\", \"clients\":"+json_clients+"}";
+
+                    string json_clients = ClientsJsonTo();
+                    response = "{\"msgid\":10000, \"ip\":\"" + client.ip + "\", \"clients\":" + json_clients + "}";
                     client.Send(server, response);
 
-                    for(int i = 0; i < clients.Count; i++)
+                    string json_objects = ObjectsJsonTo();
+                    response = "{\"msgid\":10004, \"objects\":" + json_objects + "}";
+                    client.Send(server, response);
+
+                    for (int i = 0; i < clients.Count; i++)
                     {
                         string json_client = JsonUtility.ToJson(client);
-                        response = "{\"msgid\":10001, \"client\":"+json_client+"}";
+                        response = "{\"msgid\":10001, \"client\":" + json_client + "}";
                         clients[i].Send(server, response);
                     }
 
-                    
                     clients.Add(client);
-                    print("Add client -> " + ((IPEndPoint)receive.point).Address.ToString());
+
+                    print("Add client -> " + client.ip);
                 }
                 break;
                 case 10003:
                 {
-                    RequestObject request_object = JsonUtility.FromJson<RequestObject>(receive.request);
+                    RequestClient request_clientt = JsonUtility.FromJson<RequestClient>(receive.request);
                     Client client = new Client(receive.point);
                     int id = clients.FindIndex(s => s.ip == client.ip);
-                    string json_client = JsonUtility.ToJson(request_object.client);
+                    string json_client = JsonUtility.ToJson(request_clientt.client);
 
                     if(id > -1)
-                        clients[id].transform.Set(request_object.client.transform);
+                        clients[id].transform.Set(request_clientt.client.transform);
 
                     response = "{\"msgid\":10003, \"client\":"+json_client+"}";
                     for(int i = 0; i < clients.Count; i++)

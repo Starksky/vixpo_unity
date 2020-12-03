@@ -15,6 +15,9 @@ using UnityEngine.UI;
 	public Vector3 position;
 	public Vector3 rotation;
     public Vector3 velocity;
+
+    private bool _isAdd = false;
+
     public Object() { }
     public Object(Object _o)
     {
@@ -30,6 +33,8 @@ using UnityEngine.UI;
         this.rotation = _o.rotation;
         this.velocity = _o.velocity;
     }
+    public void Add() { this._isAdd = true; }
+    public bool isAdd() { return _isAdd; }
 }
 
 [Serializable] public class Player
@@ -69,20 +74,31 @@ public class Request
 {
 	public int msgid;
 }
-public class RequestObjects
+public class RequestClients
 {
 	public int msgid;
 	public string ip;
 	public List<Player> clients;
-    public RequestObjects() { clients = new List<Player>(); }
+    public RequestClients() { clients = new List<Player>(); }
+}
+public class RequestClient
+{
+    public int msgid;
+    public Player client;
+    public RequestClient() { client = new Player(); }
+}
+public class RequestObjects
+{
+    public int msgid;
+    public List<Object> objects;
+    public RequestObjects() { objects = new List<Object>(); }
 }
 public class RequestObject
 {
     public int msgid;
-    public Player client;
-    public RequestObject() { client = new Player(); }
+    public Object obj;
+    public RequestObject() { obj = new Object(); }
 }
-
 public class Game : MonoBehaviour
 {
     Thread readThread;
@@ -105,9 +121,11 @@ public class Game : MonoBehaviour
 
     private GameObject scene;
     private GameObject player;
+    private Rigidbody body;
     private Player playerSync;
 
     private List<Player> players;
+    private List<Object> objects;
 
     public void SaveName()
     {
@@ -124,6 +142,19 @@ public class Game : MonoBehaviour
             _player.Add();
         }
     }
+    private void LinkObject(Object _object)
+    {
+        try
+        {
+            SyncServerSceneDown linkObject = GameObject.Find(_object.name).gameObject.GetComponent<SyncServerSceneDown>();
+            linkObject.Link(_object);
+            _object.Add();
+        }
+        catch (Exception err)
+        {
+            print(err.ToString());
+        }
+    }
     void Send(string json, bool secure = false)
     {
     	if(secure)
@@ -137,9 +168,11 @@ public class Game : MonoBehaviour
     void Start()
     {
     	players = new List<Player>();
+        objects = new List<Object>();
 
         scene = GameObject.Find("Game").gameObject;
         player = GameObject.Find("Player").gameObject;
+        body = player.GetComponent<Rigidbody>();
 
         playerSync = new Player();
         playerSync.transform.name = Name.text;
@@ -175,10 +208,10 @@ public class Game : MonoBehaviour
             }
             else tempTimerUpdate -= Time.fixedDeltaTime;
 
-            if(playerSync.transform.position != player.transform.localPosition || playerSync.transform.rotation != player.transform.eulerAngles)
+            if(playerSync.transform.position != body.position || playerSync.transform.rotation != body.rotation.eulerAngles)
             {
-	            playerSync.transform.position = player.transform.localPosition;
-	        	playerSync.transform.rotation = player.transform.eulerAngles;
+	            playerSync.transform.position = body.position;
+	        	playerSync.transform.rotation = body.rotation.eulerAngles;
 
 	        	string json = JsonUtility.ToJson(playerSync);
 	        	request = "{\"msgid\":10003, \"client\":"+json+"}";
@@ -202,6 +235,12 @@ public class Game : MonoBehaviour
         		AddPlayer(players[i]);
         	else players[i].Update();
         }
+
+        for (int i = 0; i < objects.Count; i++)
+        {
+            if (!objects[i].isAdd())
+                LinkObject(objects[i]);
+        }
     }
 
     // Receive thread function
@@ -218,43 +257,58 @@ public class Game : MonoBehaviour
                 // encode UTF8-coded bytes to text format
                 string text = new UTF8Encoding(true).GetString(data);
 
-                Request response = JsonUtility.FromJson<Request>(text);
+                Request request = JsonUtility.FromJson<Request>(text);
 
-                switch(response.msgid)
+                switch(request.msgid)
                 {
                 	case 10000: //connected
                 	{
-                		RequestObjects response_objects = JsonUtility.FromJson<RequestObjects>(text);
+                		RequestClients request_objects = JsonUtility.FromJson<RequestClients>(text);
                         print("Connected");
-                        playerSync.ip = response_objects.ip;
-                		isConnected = true;
+                        playerSync.ip = request_objects.ip;
+                        players.AddRange(request_objects.clients);
+                        isConnected = true;
                 	}
                 	break;
                 	case 10001: //add player
                 	{
                 		print("connect player");
-                		RequestObject response_object = JsonUtility.FromJson<RequestObject>(text);
-                		players.Add(response_object.client);
+                		RequestClient request_object = JsonUtility.FromJson<RequestClient>(text);
+                		players.Add(request_object.client);
                 	}
                 	break;
                 	case 10002: //remove player
                 	{
                 		print("exit player");
-                		RequestObject response_object = JsonUtility.FromJson<RequestObject>(text);
-                        int id = players.FindIndex(s => s.ip == response_object.client.ip);
+                		RequestClient request_object = JsonUtility.FromJson<RequestClient>(text);
+                        int id = players.FindIndex(s => s.ip == request_object.client.ip);
                         if (id > -1)
                 			players[id].Exit();
                 	}
                 	break;
                 	case 10003: //update player
                 	{
-                		print(text);
-                		RequestObject response_object = JsonUtility.FromJson<RequestObject>(text);
-                        int id = players.FindIndex(s => s.ip == response_object.client.ip);
+                		RequestClient request_object = JsonUtility.FromJson<RequestClient>(text);
+                        int id = players.FindIndex(s => s.ip == request_object.client.ip);
                         if (id > -1)
-                			players[id].transform.Set(response_object.client.transform);
+                			players[id].transform.Set(request_object.client.transform);
                 	}
                 	break;
+                    case 10004: //objects
+                    {
+                        RequestObjects request_objects = JsonUtility.FromJson<RequestObjects>(text);
+                        objects.AddRange(request_objects.objects);
+                    }
+                    break;
+                    case 10005: // update object
+                    {
+                        print(text);
+                        RequestObject request_object = JsonUtility.FromJson<RequestObject>(text);
+                        int id = objects.FindIndex(s => s.name == request_object.obj.name);
+                        if (id > -1)
+                           objects[id].Set(request_object.obj);
+                    }
+                    break;
                 }
             }
             catch (Exception err)
@@ -263,8 +317,6 @@ public class Game : MonoBehaviour
             }
         }
     }
-
-
 
     // Unity Application Quit Function
     void OnApplicationQuit()

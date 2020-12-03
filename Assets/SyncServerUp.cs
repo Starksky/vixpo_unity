@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SyncServerUp : MonoBehaviour
+// Для обновления на сервере
+public class SyncServerUp : MonoBehaviour 
 {
 	private GameServer game_server;
 	private Client client;
@@ -20,6 +21,8 @@ public class SyncServerUp : MonoBehaviour
     {
         if(client != null)
         {
+            if (client.isExit()) return;
+
             body.position = client.transform.position;
             body.rotation = Quaternion.Euler(client.transform.rotation);
 

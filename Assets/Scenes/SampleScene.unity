@@ -137,6 +137,7 @@ GameObject:
   - component: {fileID: 48928123}
   - component: {fileID: 48928122}
   - component: {fileID: 48928127}
+  - component: {fileID: 48928128}
   m_Layer: 0
   m_Name: Cube
   m_TagString: SyncServer
@@ -246,6 +247,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c90e8ab7c3b6014d81ca1bbac119507, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &48928128
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 48928121}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b3975fcb1471f744a1d20c25e374a0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &159175006
@@ -946,6 +959,7 @@ GameObject:
   - component: {fileID: 951651013}
   - component: {fileID: 951651012}
   - component: {fileID: 951651017}
+  - component: {fileID: 951651018}
   m_Layer: 0
   m_Name: Cube (2)
   m_TagString: SyncServer
@@ -1057,6 +1071,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c90e8ab7c3b6014d81ca1bbac119507, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &951651018
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 951651011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b3975fcb1471f744a1d20c25e374a0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1092413518
 GameObject:
   m_ObjectHideFlags: 0
@@ -1071,6 +1097,7 @@ GameObject:
   - component: {fileID: 1092413520}
   - component: {fileID: 1092413519}
   - component: {fileID: 1092413524}
+  - component: {fileID: 1092413525}
   m_Layer: 0
   m_Name: Cube (1)
   m_TagString: SyncServer
@@ -1182,6 +1209,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c90e8ab7c3b6014d81ca1bbac119507, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1092413525
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1092413518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b3975fcb1471f744a1d20c25e374a0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1094184644
 GameObject:
   m_ObjectHideFlags: 0
@@ -1275,9 +1314,10 @@ GameObject:
   - component: {fileID: 1535705447}
   - component: {fileID: 1535705446}
   - component: {fileID: 1535705445}
+  - component: {fileID: 1535705450}
   m_Layer: 0
   m_Name: Cube (3)
-  m_TagString: Untagged
+  m_TagString: SyncServer
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1386,6 +1426,18 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1535705443}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1535705450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1535705443}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b3975fcb1471f744a1d20c25e374a0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &1577749884 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 9094394282272073658, guid: 755840e05859f9aa88384f0bccb0e023, type: 3}
@@ -1503,7 +1555,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1834692933}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3516150d9754135b3b33e960e64f8fb5, type: 3}
   m_Name: 
@@ -1523,13 +1575,15 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1834692933}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2b4c7fcf4324569ca25af4676bc59e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isConnected: 0
   Port: 22023
   TemplatePlayer: {fileID: 5556711691806753932, guid: 159fb88cea09258899ea9dce23706d40, type: 3}
+  clients: []
 --- !u!1 &1915897644
 GameObject:
   m_ObjectHideFlags: 0
