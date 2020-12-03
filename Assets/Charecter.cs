@@ -14,6 +14,7 @@ public class Charecter : MonoBehaviour
     private Vector3 currentRotation;
     private bool isPause = false;
     private GameObject Menu;
+    
 	// Start is called before the first frame update
 	void Start()
     {
@@ -72,7 +73,9 @@ public class Charecter : MonoBehaviour
 	        currentRotation.x = Mathf.Repeat(currentRotation.x, 360);
 	        currentRotation.y = Mathf.Clamp(currentRotation.y, -maxYAngle, maxYAngle);
 			//camera.transform.rotation = Quaternion.Euler(currentRotation.y,currentRotation.x,0);
-			camera.transform.rotation = Quaternion.Euler(currentRotation.y,currentRotation.x,0);        	
+			camera.transform.rotation = Quaternion.Euler(currentRotation.y,currentRotation.x,0); 
+
+
         }
         else
         {

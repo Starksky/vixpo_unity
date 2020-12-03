@@ -11,34 +11,69 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [Serializable] public class Client{
+    private bool _isAdd = false;
+    private EndPoint point;
+
     public string ip;
     public long lastTimeServer;
-    private EndPoint point;
     public Object transform;
-    public Client(EndPoint _p){ 
+
+    private GameObject player;
+
+    public Client(EndPoint _p){
         point = _p; 
         ip = ((IPEndPoint)_p).Address.ToString(); 
         transform = new Object();
         transform.name = ip;
     }
+
     public void Send(Socket server, string json)
     {
         byte[] sendBytes = new UTF8Encoding(true).GetBytes(json);
         server.SendTo(sendBytes, point);
     }
+
+    public void Add(GameObject _player){ _isAdd = true; player = _player; }
+    public void Remove(){ GameObject.Destroy(player); Debug.Log("remove player"); }
+    public bool isAdd(){ return _isAdd; }
+}
+
+public class ReceiveRequest{
+    public EndPoint point;
+    public string request;
+    public bool isSet = false;
+    public ReceiveRequest(EndPoint _p, string _r){ point = _p; request = _r; }
 }
 
 public class GameServer : MonoBehaviour
 {
+    public Socket server;
     Thread serverThread;
 
-    private Socket server;
-    private int port = 22023;
+    public int Port = 22023;
+    public GameObject TemplatePlayer; 
+    
     private List<Client> clients;
     private GameObject scene;
 
     private struct Request{
         public int msgid;
+    }
+
+    private long GetTimestamp()
+    {
+        return (long)(new TimeSpan(DateTime.Now.Ticks)).TotalSeconds;
+    }
+    private void AddPlayer(Client client)
+    {
+        if(scene != null)
+        {
+            GameObject player = Instantiate(TemplatePlayer, scene.transform, false);
+            SyncServerUp playerSync = player.GetComponent<SyncServerUp>();
+            playerSync.SetClient(client);
+            client.Add(player);
+            print("add player");
+        }
     }
 
     void Start()
@@ -48,7 +83,7 @@ public class GameServer : MonoBehaviour
         clients = new List<Client>();
 
         server = new Socket(IPAddress.Any.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-        IPEndPoint pointIP = new IPEndPoint(IPAddress.Any, port);
+        IPEndPoint pointIP = new IPEndPoint(IPAddress.Any, Port);
         
         try {
             server.Bind(pointIP);
@@ -68,28 +103,45 @@ public class GameServer : MonoBehaviour
     {
         stopThread();
     }
+
     void Update()
     {
         string response = "";
+        List<Client> removeClients = new List<Client>();
 
-        for (int id = 0; id < clients.Count; id++)
+        for(int i = 0; i < clients.Count; i++)
         {
-            if (GetTimestamp() - clients[id].lastTimeServer > 3)
+            if(clients[i] != null)
             {
-                for (int i = 0; i < clients.Count; i++)
+                if (GetTimestamp() - clients[i].lastTimeServer > 3)
                 {
-                    if (i == id) continue;
+                    for(int id = 0; id < clients.Count; id++)
+                    {
+                        if (i == id) continue;
 
-                    string json_client = JsonUtility.ToJson(clients[id]);
-                    response = "{\"msgid\":10002, \"client\":\"" + json_client + "\"}";
-                    clients[id].Send(server, response);
+                        string json_client = JsonUtility.ToJson(clients[i]);
+                        response = "{\"msgid\":10002, \"client\":" + json_client + "}";
+                        clients[id].Send(server, response);
+                    }                 
+                    removeClients.Add(clients[i]); 
                 }
-                string ip = clients[id].ip;
-                clients.Remove(clients[id]);
-                print("Exit client -> " + ip);
+
+                if(!clients[i].isAdd())
+                    AddPlayer(clients[i]);             
             }
         }
+
+        for(int i = 0; i < removeClients.Count; i++)
+        {
+            string ip = clients[i].ip;
+            clients[i].Remove();
+            clients.Remove(clients[i]);
+            print("Exit client -> " + ip);
+        }
+
+        removeClients.Clear();
     }
+
     // Stop reading UDP messages
     private void stopThread()
     {
@@ -99,17 +151,12 @@ public class GameServer : MonoBehaviour
         }
         server.Close();
     }
-    private long GetTimestamp()
-    {
-        return (long)(new TimeSpan(DateTime.Now.Ticks)).TotalSeconds;
-    }
-    // receive thread function
+
+    // Receive thread function
     private void ReceiveData()
     {
         while (true)
         {
-            string response = "";
-
             try
             {
                 byte[] data = new byte[1024];
@@ -119,56 +166,88 @@ public class GameServer : MonoBehaviour
                 EndPoint senderRemote = (EndPoint)sender;
 
                 server.ReceiveFrom(data, ref senderRemote);
+
                 // encode UTF8-coded bytes to text format
                 string text = new UTF8Encoding(true).GetString(data);
 
-                Request request = JsonUtility.FromJson<Request>(text);
-                
-
-                switch(request.msgid)
-                {
-                    case 10000:
-                    {
-                        Client client = new Client(senderRemote);
-                        client.lastTimeServer = GetTimestamp();
-
-                        int id = clients.FindIndex(s => s.ip == client.ip);
-
-                        if (id > -1) 
-                        {
-                            print("Client already added -> " + ((IPEndPoint)senderRemote).Address.ToString());
-                            break;
-                        }
-                        
-                        string json_clients = JsonUtility.ToJson(clients);
-                        response = "{\"msgid\":10000, \"clients\":\""+json_clients+"\"}";
-                        client.Send(server, response);
-
-                        for(int i = 0; i < clients.Count; i++)
-                        {
-                            string json_client = JsonUtility.ToJson(client);
-                            response = "{\"msgid\":10001, \"client\":\""+json_client+"\"}";
-                            clients[i].Send(server, response);
-                        }
-
-                        clients.Add(client);
-                        print("Add client -> " + ((IPEndPoint)senderRemote).Address.ToString());
-                    }
-                    break;
-                    case 20000:
-                    {
-                        Client client = new Client(senderRemote);
-                        int id = clients.FindIndex(s => s.ip == client.ip);
-                        if(id > -1)
-                            clients[id].lastTimeServer = GetTimestamp();
-                    }
-                    break;
-                }
+                Thread readThread = new Thread(new ThreadStart(delegate { ReadData( new ReceiveRequest(senderRemote, text) ); } ));
+                readThread.IsBackground = true;
+                readThread.Start();
             }
             catch (Exception err)
             {
                 print(err.ToString());
             }
         }
+    }
+
+    private void ReadData(ReceiveRequest receive)
+    {
+        try
+        {
+            string response = "";
+
+            Request request = JsonUtility.FromJson<Request>(receive.request);
+            
+            switch(request.msgid)
+            {
+                case 10000:
+                {
+                    Client client = new Client(receive.point);
+                    client.lastTimeServer = GetTimestamp();
+
+                    int id = clients.FindIndex(s => s.ip == client.ip);
+
+                    if (id > -1) 
+                    {
+                        print("Client already added -> " + ((IPEndPoint)receive.point).Address.ToString());
+                        break;
+                    }
+                    
+                    string json_clients = JsonUtility.ToJson(clients);
+                    response = "{\"msgid\":10000, \"ip\":\""+ ((IPEndPoint)receive.point).Address.ToString() +"\", \"clients\":"+json_clients+"}";
+                    client.Send(server, response);
+
+                    for(int i = 0; i < clients.Count; i++)
+                    {
+                        string json_client = JsonUtility.ToJson(client);
+                        response = "{\"msgid\":10001, \"client\":"+json_client+"}";
+                        clients[i].Send(server, response);
+                    }
+
+                    
+                    clients.Add(client);
+                    print("Add client -> " + ((IPEndPoint)receive.point).Address.ToString());
+                }
+                break;
+                case 10003:
+                {
+                    RequestObject request_object = JsonUtility.FromJson<RequestObject>(receive.request);
+                    Client client = new Client(receive.point);
+                    int id = clients.FindIndex(s => s.ip == client.ip);
+                    string json_client = JsonUtility.ToJson(request_object.client);
+
+                    if(id > -1)
+                        clients[id].transform.Set(request_object.client.transform);
+
+                    response = "{\"msgid\":10003, \"client\":"+json_client+"}";
+                    for(int i = 0; i < clients.Count; i++)
+                    {
+                        if(id == i) continue;
+                        clients[i].Send(server, response);
+                    }
+                }
+                break;
+                case 20000:
+                {
+                    Client client = new Client(receive.point);
+                    int id = clients.FindIndex(s => s.ip == client.ip);
+                    if(id > -1)
+                        clients[id].lastTimeServer = GetTimestamp();
+                }
+                break;
+            }
+        }
+        catch(Exception err) { print(err.ToString()); }
     }
 }

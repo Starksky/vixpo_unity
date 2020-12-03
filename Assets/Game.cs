@@ -36,14 +36,14 @@ using UnityEngine.UI;
 {
 	public string ip;
 	public long lastTimeServer;
+	public Object transform;
 
-	private bool exit;
+
+	private bool _isAdd = false;
+	private bool _isExit = false;
 	private GameObject player;
 	private TextMesh name;
-
-    public Object transform;
-
-    public bool isAdd(){ return player != null ? true : false; }
+    
 	public Player(){ transform = new Object(); }
 	public Player(Object _o){ transform = _o; }
 	public void Create(GameObject _o)
@@ -54,30 +54,33 @@ using UnityEngine.UI;
 	public void Update()
 	{
         if (player == null) return;
-		if(exit) GameObject.Destroy(player);
+		if (_isExit) GameObject.Destroy(player);
 
         player.transform.localPosition = Vector3.Lerp(player.transform.localPosition, transform.position, 1);
 	 	player.transform.rotation = Quaternion.Lerp(player.transform.rotation, Quaternion.Euler(transform.rotation), 1);
 	 	name.text = transform.name;
 	}
-	public void Exit(){ this.exit = true; }
+	public void Exit(){ this._isExit = true; }
+	public void Add(){ this._isAdd = true; }
+	public bool isAdd(){ return _isAdd; }
 
 }
-public class Response
+public class Request
 {
 	public int msgid;
 }
-public class ResponseObjects
+public class RequestObjects
 {
 	public int msgid;
-	public List<Player> players;
-    public ResponseObjects() { players = new List<Player>(); }
+	public string ip;
+	public List<Player> clients;
+    public RequestObjects() { clients = new List<Player>(); }
 }
-public class ResponseObject
+public class RequestObject
 {
     public int msgid;
-    public Player player;
-    public ResponseObject() { player = new Player(); }
+    public Player client;
+    public RequestObject() { client = new Player(); }
 }
 
 public class Game : MonoBehaviour
@@ -90,24 +93,38 @@ public class Game : MonoBehaviour
 
     public int Port = 22023;
     public string IP = "78.24.222.166";
+
+    public float TimerUpdate = 1f; // 1 sec
+    public float TimerReconnect = 3f; // 3 sec
+
+    private float tempTimerUpdate = 1f; // 1 sec
+    private float tempTimerReconnect = 3f; // 3 sec
+
     public GameObject TemplatePlayer;
     public InputField Name;
 
-    private float TimerUpdate = 1f; // 1 sec
-    private float TimerReconnect = 3f; // 1 sec
     private GameObject scene;
     private GameObject player;
-    private Object playerSync;
+    private Player playerSync;
 
     private List<Player> players;
 
     public void SaveName()
     {
-    	playerSync.name = Name.text;
-    	player.transform.GetChild(1).GetComponent<TextMesh>().text = playerSync.name;
+    	playerSync.transform.name = Name.text;
+    	player.transform.GetChild(1).GetComponent<TextMesh>().text = playerSync.transform.name;
     }
-
-    void Send(string json, bool secure)
+    private void AddPlayer(Player _player)
+    {
+        if(scene != null)
+        {
+            GameObject __player = Instantiate(TemplatePlayer, scene.transform, false);
+            SyncServerDown __syncPlayer = __player.GetComponent<SyncServerDown>();
+            __syncPlayer.SetPlayer(_player);
+            _player.Add();
+        }
+    }
+    void Send(string json, bool secure = false)
     {
     	if(secure)
     		if (!isConnected) return;
@@ -124,14 +141,12 @@ public class Game : MonoBehaviour
         scene = GameObject.Find("Game").gameObject;
         player = GameObject.Find("Player").gameObject;
 
-        playerSync = new Object();
-        playerSync.position = player.transform.localPosition;
-        playerSync.rotation = player.transform.eulerAngles;
-        playerSync.name = Name.text;
+        playerSync = new Player();
+        playerSync.transform.name = Name.text;
 
     	client = new UdpClient(IP, Port);
 
-        // create thread for reading UDP messages
+        // Create thread for reading UDP messages
         readThread = new Thread(new ThreadStart(ReceiveData));
         readThread.IsBackground = true;
         readThread.Start();
@@ -141,35 +156,55 @@ public class Game : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+    	string request;
+
         if(!isConnecting)
         {
-            string request = "{\"msgid\":10000}";
-            Send(request, false);
+            request = "{\"msgid\":10000}";
+            Send(request);
             isConnecting = true;
         }
+
         if(isConnected)
         {
-            if (TimerUpdate <= 0)
+            if (tempTimerUpdate <= 0)
             {
-                string request = "{\"msgid\":20000}";
-                Send(request, false);
-                TimerUpdate = 1f;
+                request = "{\"msgid\":20000}";
+                Send(request);
+                tempTimerUpdate = TimerUpdate;
             }
-            else TimerUpdate -= Time.fixedDeltaTime;
+            else tempTimerUpdate -= Time.fixedDeltaTime;
+
+            if(playerSync.transform.position != player.transform.localPosition || playerSync.transform.rotation != player.transform.eulerAngles)
+            {
+	            playerSync.transform.position = player.transform.localPosition;
+	        	playerSync.transform.rotation = player.transform.eulerAngles;
+
+	        	string json = JsonUtility.ToJson(playerSync);
+	        	request = "{\"msgid\":10003, \"client\":"+json+"}";
+	            Send(request);            	
+            }
         }
         else
         {
-            TimerReconnect -= Time.fixedDeltaTime;
+            tempTimerReconnect -= Time.fixedDeltaTime;
         }
 
-        if (TimerReconnect <= 0)
+        if (tempTimerReconnect <= 0)
         {
             isConnecting = false;
-            TimerReconnect = 3f;
+            tempTimerReconnect = TimerReconnect;
+        }
+
+        for(int i = 0; i < players.Count; i++)
+        {
+        	if(!players[i].isAdd())
+        		AddPlayer(players[i]);
+        	else players[i].Update();
         }
     }
 
-    // receive thread function
+    // Receive thread function
     private void ReceiveData()
     {
         while (true)
@@ -183,37 +218,41 @@ public class Game : MonoBehaviour
                 // encode UTF8-coded bytes to text format
                 string text = new UTF8Encoding(true).GetString(data);
 
-                Response response = JsonUtility.FromJson<Response>(text);
+                Request response = JsonUtility.FromJson<Request>(text);
 
                 switch(response.msgid)
                 {
-                	//Connected user
-                	case 10000:
+                	case 10000: //connected
                 	{
-                        print(text);
+                		RequestObjects response_objects = JsonUtility.FromJson<RequestObjects>(text);
+                        print("Connected");
+                        playerSync.ip = response_objects.ip;
                 		isConnected = true;
                 	}
                 	break;
                 	case 10001: //add player
                 	{
-                		ResponseObject response_object = JsonUtility.FromJson<ResponseObject>(text);
-                		players.Add(response_object.player);
+                		print("connect player");
+                		RequestObject response_object = JsonUtility.FromJson<RequestObject>(text);
+                		players.Add(response_object.client);
                 	}
                 	break;
                 	case 10002: //remove player
                 	{
-                		ResponseObject response_object = JsonUtility.FromJson<ResponseObject>(text);
-                        int id = players.FindIndex(s => s.ip == response_object.player.ip);
+                		print("exit player");
+                		RequestObject response_object = JsonUtility.FromJson<RequestObject>(text);
+                        int id = players.FindIndex(s => s.ip == response_object.client.ip);
                         if (id > -1)
                 			players[id].Exit();
                 	}
                 	break;
                 	case 10003: //update player
                 	{
-                		ResponseObject response_object = JsonUtility.FromJson<ResponseObject>(text);
-                        int id = players.FindIndex(s => s.ip == response_object.player.ip);
+                		print(text);
+                		RequestObject response_object = JsonUtility.FromJson<RequestObject>(text);
+                        int id = players.FindIndex(s => s.ip == response_object.client.ip);
                         if (id > -1)
-                			players[id].transform.Set(response_object.player.transform);
+                			players[id].transform.Set(response_object.client.transform);
                 	}
                 	break;
                 }

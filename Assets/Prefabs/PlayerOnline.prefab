@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 3317505743627173315}
   - component: {fileID: 2836220427428662017}
   - component: {fileID: 1079855771928541846}
+  - component: {fileID: 3946668117452185895}
+  - component: {fileID: 436013789753332924}
   m_Layer: 0
   m_Name: PlayerOnline
   m_TagString: Untagged
@@ -114,6 +116,30 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
+--- !u!114 &3946668117452185895
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5556711691806753932}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 834e5dc55ab294c879f2cb6c7f759d83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &436013789753332924
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5556711691806753932}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ac3413ea5638c3e2962aacbcc13fc81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8672830953931768278
 GameObject:
   m_ObjectHideFlags: 0

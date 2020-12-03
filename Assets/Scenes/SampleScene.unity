@@ -1509,8 +1509,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isConnected: 0
+  isConnecting: 0
   Port: 22023
   IP: 78.24.222.166
+  TimerUpdate: 1
+  TimerReconnect: 3
   TemplatePlayer: {fileID: 5556711691806753932, guid: 159fb88cea09258899ea9dce23706d40, type: 3}
   Name: {fileID: 913460307}
 --- !u!114 &1834692936
@@ -1525,6 +1528,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2b4c7fcf4324569ca25af4676bc59e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Port: 22023
+  TemplatePlayer: {fileID: 5556711691806753932, guid: 159fb88cea09258899ea9dce23706d40, type: 3}
 --- !u!1 &1915897644
 GameObject:
   m_ObjectHideFlags: 0
@@ -1675,14 +1680,6 @@ PrefabInstance:
     - target: {fileID: 9094394282272073660, guid: 755840e05859f9aa88384f0bccb0e023, type: 3}
       propertyPath: m_Name
       value: Player
-      objectReference: {fileID: 0}
-    - target: {fileID: 9094394282272073660, guid: 755840e05859f9aa88384f0bccb0e023, type: 3}
-      propertyPath: m_TagString
-      value: Player
-      objectReference: {fileID: 0}
-    - target: {fileID: 9094394282272073661, guid: 755840e05859f9aa88384f0bccb0e023, type: 3}
-      propertyPath: FlySpeed
-      value: 20
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 755840e05859f9aa88384f0bccb0e023, type: 3}
