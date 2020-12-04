@@ -61,7 +61,7 @@ public class GameServer : MonoBehaviour
 
     private GameObject scene;
 
-    private long GetTimestamp()
+    public long GetTimestamp()
     {
         return (long)(new TimeSpan(DateTime.Now.Ticks)).TotalSeconds;
     }
@@ -261,15 +261,15 @@ public class GameServer : MonoBehaviour
                 break;
                 case 10003:
                 {
-                    RequestClient request_clientt = JsonUtility.FromJson<RequestClient>(receive.request);
+                    RequestClient request_client = JsonUtility.FromJson<RequestClient>(receive.request);
                     Client client = new Client(receive.point);
                     int id = clients.FindIndex(s => s.ip == client.ip);
-                    string json_client = JsonUtility.ToJson(request_clientt.client);
+                    string json_client = JsonUtility.ToJson(request_client.client);
 
                     if(id > -1)
-                        clients[id].transform.Set(request_clientt.client.transform);
+                        clients[id].transform.Set(request_client.client.transform);
 
-                    response = "{\"msgid\":10003, \"client\":"+json_client+"}";
+                    response = "{\"msgid\":10003, \"client\":"+json_client+"}"; // Отправка без проверки !!!
                     for(int i = 0; i < clients.Count; i++)
                     {
                         if(id == i) continue;

@@ -13,76 +13,90 @@ public class Charecter : MonoBehaviour
     public float maxYAngle = 80f;
     private Vector3 currentRotation;
     private bool isPause = false;
-    private GameObject Menu;
+    private GameObject menu;
+    private Game game;
+    private Rigidbody body;
     
+    private void SendForce(Vector3 force)
+    {
+		if(game.isInit)
+        {
+            game.playerSync.transform.force = force;
+        	string json = JsonUtility.ToJson(game.playerSync);
+        	string request = "{\"msgid\":10003, \"client\":"+json+"}";
+            game.Send(request); 
+
+        }
+
+        print("SendForce");
+    }
+
 	// Start is called before the first frame update
 	void Start()
     {
         currentRotation = transform.eulerAngles;
-        Menu = GameObject.Find("Menu").gameObject;
+        menu = GameObject.Find("Menu").gameObject;
+        game = GameObject.Find("Game").gameObject.GetComponent<Game>();
+        body = GetComponent<Rigidbody>();
 	}
+	void Update()
+	{
 
+	}
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
             isPause = !isPause;
 
         if(!isPause)
         {
-        	Menu.SetActive(false);
+        	menu.SetActive(false);
+        	Vector3 force = Vector3.zero;
 
+        	SendForce(force);
 			if (Input.GetAxis("Vertical") != 0)
 		    {
-				//camera.transform.Translate(Vector3.forward * FlySpeed * Input.GetAxis("Vertical"));
-				//transform.Translate(Vector3.forward * FlySpeed * Input.GetAxis("Vertical"));
-				GetComponent<Rigidbody>().velocity = new Vector3(0f, 0f, 0f);
+				body.velocity = Vector3.zero;
 				Vector3 direction = camera.transform.TransformDirection(Vector3.forward);
-				GetComponent<Rigidbody>().AddForce(direction.normalized * Input.GetAxis("Vertical") * FlySpeed, ForceMode.Impulse);
+				force = direction.normalized * Input.GetAxis("Vertical") * FlySpeed;
+				body.AddForce(direction.normalized * Input.GetAxis("Vertical") * FlySpeed, ForceMode.Impulse);
+
+				SendForce(force);
 			}
 		   
 		   
 		    if (Input.GetAxis("Horizontal") != 0)
 		    {
-				//camera.transform.Translate(Vector3.right * FlySpeed * Input.GetAxis("Horizontal"));
-				//transform.Translate(Vector3.right * FlySpeed * Input.GetAxis("Horizontal"));
-				GetComponent<Rigidbody>().velocity = new Vector3(0f, 0f, 0f);
+				body.velocity = Vector3.zero;
 				Vector3 direction = camera.transform.TransformDirection(Vector3.right);
-				GetComponent<Rigidbody>().AddForce(direction.normalized * Input.GetAxis("Horizontal") * FlySpeed, ForceMode.Impulse);
+				force = direction.normalized * Input.GetAxis("Horizontal") * FlySpeed;
+				body.AddForce(direction.normalized * Input.GetAxis("Horizontal") * FlySpeed, ForceMode.Impulse);
+
+				SendForce(force);
 			}
 
 			if(Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)
-				GetComponent<Rigidbody>().velocity = new Vector3(0f, 0f, 0f);
+				body.velocity = Vector3.zero;
 
 			//ensure these stay this way
 			Cursor.lockState = CursorLockMode.Locked;
 	        Cursor.visible = false;
-	 
-	/*        var mouseDelta = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
-	        var targetOrientation = Quaternion.Euler(targetDirection);
-	 
 
-	        var xRotation = Quaternion.AngleAxis(-mouseDelta.y, Vector3.right);
-	        camera.transform.localRotation *= xRotation * targetOrientation;
-	        var yRotation = Quaternion.AngleAxis(mouseDelta.x, transform.InverseTransformDirection(Vector3.up));
-	        camera.transform.localRotation *= yRotation;
-	*/
+	 
 
 	        currentRotation.x += Input.GetAxis("Mouse X");
 	        currentRotation.y -= Input.GetAxis("Mouse Y");
 	        currentRotation.x = Mathf.Repeat(currentRotation.x, 360);
 	        currentRotation.y = Mathf.Clamp(currentRotation.y, -maxYAngle, maxYAngle);
-			//camera.transform.rotation = Quaternion.Euler(currentRotation.y,currentRotation.x,0);
 			camera.transform.rotation = Quaternion.Euler(currentRotation.y,currentRotation.x,0); 
-
-
         }
         else
         {
 			if (Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)
-				GetComponent<Rigidbody>().velocity = new Vector3(0f, 0f, 0f);
+				body.velocity = Vector3.zero;
 
-			Menu.SetActive(true);
+			menu.SetActive(true);
         	Cursor.lockState = CursorLockMode.None;
 	        Cursor.visible = true;
         }

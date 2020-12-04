@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+// для обновления сцены
 public class SyncServerSceneDown : MonoBehaviour
 {
     private Game game;
@@ -28,11 +29,12 @@ public class SyncServerSceneDown : MonoBehaviour
     {
         if(objectSync != null)
         {
-            body.detectCollisions = false;
-            body.useGravity = false;
+            //body.detectCollisions = false;
+            //body.isKinematic = true;
+            //body.useGravity = false;
             body.interpolation = RigidbodyInterpolation.None;
-            body.position = objectSync.position;
-            body.rotation = Quaternion.Euler(objectSync.rotation);
+            body.position = Vector3.Lerp(body.position, objectSync.position, 0.02f);
+            body.rotation = Quaternion.Lerp(body.rotation, Quaternion.Euler(objectSync.rotation), 0.02f);
         }
     }
     

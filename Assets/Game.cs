@@ -15,6 +15,7 @@ using UnityEngine.UI;
 	public Vector3 position;
 	public Vector3 rotation;
     public Vector3 velocity;
+    public Vector3 force;
 
     private bool _isAdd = false;
 
@@ -54,16 +55,16 @@ using UnityEngine.UI;
 	public void Create(GameObject _o)
 	{ 
 		player = _o;
-		name = _o.transform.GetChild(0).GetComponent<TextMesh>();
+		//name = _o.transform.GetChild(0).GetComponent<TextMesh>();
 	}
 	public void Update()
 	{
         if (player == null) return;
 		if (_isExit) GameObject.Destroy(player);
 
-        player.transform.localPosition = Vector3.Lerp(player.transform.localPosition, transform.position, 1);
-	 	player.transform.rotation = Quaternion.Lerp(player.transform.rotation, Quaternion.Euler(transform.rotation), 1);
-	 	name.text = transform.name;
+        //player.transform.localPosition = Vector3.Lerp(player.transform.localPosition, transform.position, 1);
+	 	//player.transform.rotation = Quaternion.Lerp(player.transform.rotation, Quaternion.Euler(transform.rotation), 1);
+	 	//name.text = transform.name;
 	}
 	public void Exit(){ this._isExit = true; }
 	public void Add(){ this._isAdd = true; }
@@ -104,6 +105,7 @@ public class Game : MonoBehaviour
     Thread readThread;
     public UdpClient client;
 
+    [HideInInspector] public bool isInit = false;
     [HideInInspector] public bool isConnected = false;
     [HideInInspector] public bool isConnecting = false;
 
@@ -122,16 +124,27 @@ public class Game : MonoBehaviour
     private GameObject scene;
     private GameObject player;
     private Rigidbody body;
-    private Player playerSync;
+    public Player playerSync;
+    public SyncServerDown syncServerDownPlayer;
 
     private List<Player> players;
     private List<Object> objects;
 
+    public long GetTimestamp()
+    {
+        return (long)(new TimeSpan(DateTime.Now.Ticks)).TotalSeconds;
+    }
+
     public void SaveName()
     {
     	playerSync.transform.name = Name.text;
+    	playerSync.transform.force = Vector3.zero;
     	player.transform.GetChild(1).GetComponent<TextMesh>().text = playerSync.transform.name;
+    	string json = JsonUtility.ToJson(playerSync);
+	    string request = "{\"msgid\":10003, \"client\":"+json+"}";
+	    Send(request); 
     }
+
     private void AddPlayer(Player _player)
     {
         if(scene != null)
@@ -139,9 +152,11 @@ public class Game : MonoBehaviour
             GameObject __player = Instantiate(TemplatePlayer, scene.transform, false);
             SyncServerDown __syncPlayer = __player.GetComponent<SyncServerDown>();
             __syncPlayer.SetPlayer(_player);
+            _player.Create(__player);
             _player.Add();
         }
     }
+
     private void LinkObject(Object _object)
     {
         try
@@ -155,7 +170,8 @@ public class Game : MonoBehaviour
             print(err.ToString());
         }
     }
-    void Send(string json, bool secure = false)
+
+    public void Send(string json, bool secure = false)
     {
     	if(secure)
     		if (!isConnected) return;
@@ -173,9 +189,11 @@ public class Game : MonoBehaviour
         scene = GameObject.Find("Game").gameObject;
         player = GameObject.Find("Player").gameObject;
         body = player.GetComponent<Rigidbody>();
+        syncServerDownPlayer = player.GetComponent<SyncServerDown>();
 
         playerSync = new Player();
         playerSync.transform.name = Name.text;
+        syncServerDownPlayer.SetPlayer(playerSync);
 
     	client = new UdpClient(IP, Port);
 
@@ -183,8 +201,9 @@ public class Game : MonoBehaviour
         readThread = new Thread(new ThreadStart(ReceiveData));
         readThread.IsBackground = true;
         readThread.Start();
-    }
 
+        isInit = true;
+    }
 
     // Update is called once per frame
     void Update()
@@ -207,16 +226,6 @@ public class Game : MonoBehaviour
                 tempTimerUpdate = TimerUpdate;
             }
             else tempTimerUpdate -= Time.fixedDeltaTime;
-
-            if(playerSync.transform.position != body.position || playerSync.transform.rotation != body.rotation.eulerAngles)
-            {
-	            playerSync.transform.position = body.position;
-	        	playerSync.transform.rotation = body.rotation.eulerAngles;
-
-	        	string json = JsonUtility.ToJson(playerSync);
-	        	request = "{\"msgid\":10003, \"client\":"+json+"}";
-	            Send(request);            	
-            }
         }
         else
         {
@@ -292,6 +301,12 @@ public class Game : MonoBehaviour
                         int id = players.FindIndex(s => s.ip == request_object.client.ip);
                         if (id > -1)
                 			players[id].transform.Set(request_object.client.transform);
+                		else
+                			if(playerSync.ip == request_object.client.ip)
+                			{
+                				print(JsonUtility.ToJson(request_object.client.transform));
+                				playerSync.transform.Set(request_object.client.transform);
+                			}
                 	}
                 	break;
                     case 10004: //objects
