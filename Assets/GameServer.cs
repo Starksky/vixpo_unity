@@ -71,8 +71,8 @@ public class GameServer : MonoBehaviour
         if(scene != null)
         {
             GameObject player = Instantiate(TemplatePlayer, scene.transform, false);
-            player.transform.localPosition = Respawn.transform.localPosition;
-            client.transform.position = Respawn.transform.localPosition;
+            player.transform.position = Respawn.transform.position;
+            client.transform.position = Respawn.transform.position;
             SyncServerUp playerSync = player.GetComponent<SyncServerUp>();
             playerSync.SetClient(client);
             client.Add(player);

@@ -30,7 +30,6 @@ public class SyncServerDown : MonoBehaviour
             body.position = Vector3.Lerp(body.position, player.transform.position, speed);
             body.rotation = Quaternion.Lerp(body.rotation, Quaternion.Euler(player.transform.rotation), speed);
             currentPack = 0;
-
         }
     }
 

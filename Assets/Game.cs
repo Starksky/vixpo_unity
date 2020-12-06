@@ -197,11 +197,10 @@ public class Game : MonoBehaviour
         player = GameObject.Find("Player").gameObject;
         body = player.GetComponent<Rigidbody>();
         syncServerDownPlayer = player.GetComponent<SyncServerDown>();
-        player.transform.localPosition = Respawn.transform.localPosition;
 
         playerSync = new Player();
         playerSync.transform.name = Name.text;
-        playerSync.transform.position = Respawn.transform.localPosition;
+        playerSync.transform.position = Respawn.transform.position;
         syncServerDownPlayer.SetPlayer(playerSync);
 
     	client = new UdpClient(IP, Port);
