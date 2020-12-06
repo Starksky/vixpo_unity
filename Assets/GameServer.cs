@@ -26,7 +26,7 @@ using UnityEngine.UI;
         point = _p; 
         ip = ((IPEndPoint)_p).Address.ToString() + " : " + ((IPEndPoint)_p).Port.ToString(); 
         transform = new Object();
-        transform.name = ip;
+        transform.name = "Nomad";
     }
 
     public void Send(Socket server, string json)
@@ -54,10 +54,11 @@ public class GameServer : MonoBehaviour
     Thread serverThread;
 
     [HideInInspector] public bool isConnected = false;
+    [HideInInspector] public List<Client> clients;
+
     public int Port = 22023;
     public GameObject TemplatePlayer;
-
-    public List<Client> clients;
+    public GameObject Respawn;
 
     private GameObject scene;
 
@@ -70,6 +71,8 @@ public class GameServer : MonoBehaviour
         if(scene != null)
         {
             GameObject player = Instantiate(TemplatePlayer, scene.transform, false);
+            player.transform.localPosition = Respawn.transform.localPosition;
+            client.transform.position = Respawn.transform.localPosition;
             SyncServerUp playerSync = player.GetComponent<SyncServerUp>();
             playerSync.SetClient(client);
             client.Add(player);

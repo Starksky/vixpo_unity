@@ -13,6 +13,7 @@ using UnityEngine.UI;
 // для обновления сцены
 public class SyncServerSceneDown : MonoBehaviour
 {
+    public float speed = 0.1f;
     private Game game;
     private Rigidbody body;
     private Object objectSync;
@@ -32,9 +33,10 @@ public class SyncServerSceneDown : MonoBehaviour
             //body.detectCollisions = false;
             //body.isKinematic = true;
             //body.useGravity = false;
+
             body.interpolation = RigidbodyInterpolation.None;
-            body.position = Vector3.Lerp(body.position, objectSync.position, 0.02f);
-            body.rotation = Quaternion.Lerp(body.rotation, Quaternion.Euler(objectSync.rotation), 0.02f);
+            body.position = Vector3.Lerp(body.position, objectSync.position, speed);
+            body.rotation = Quaternion.Lerp(body.rotation, Quaternion.Euler(objectSync.rotation), speed);
         }
     }
     

@@ -12,6 +12,7 @@ using UnityEngine.UI;
 
 [Serializable] public class Object{
 	public string name;
+    public long pack;
 	public Vector3 position;
 	public Vector3 rotation;
     public Vector3 velocity;
@@ -23,16 +24,20 @@ using UnityEngine.UI;
     public Object(Object _o)
     {
         this.name = _o.name;
+        this.pack = _o.pack;
         this.position = _o.position;
         this.rotation = _o.rotation;
         this.velocity = _o.velocity;
+        this.force = _o.force;
     }
     public void Set(Object _o)
     {
     	this.name = _o.name;
+        this.pack = _o.pack;
         this.position = _o.position;
         this.rotation = _o.rotation;
         this.velocity = _o.velocity;
+        this.force = _o.force;
     }
     public void Add() { this._isAdd = true; }
     public bool isAdd() { return _isAdd; }
@@ -108,6 +113,8 @@ public class Game : MonoBehaviour
     [HideInInspector] public bool isInit = false;
     [HideInInspector] public bool isConnected = false;
     [HideInInspector] public bool isConnecting = false;
+    [HideInInspector] public Player playerSync;
+    [HideInInspector] public SyncServerDown syncServerDownPlayer;
 
     public int Port = 22023;
     public string IP = "78.24.222.166";
@@ -119,13 +126,12 @@ public class Game : MonoBehaviour
     private float tempTimerReconnect = 3f; // 3 sec
 
     public GameObject TemplatePlayer;
+    public GameObject Respawn;
     public InputField Name;
 
     private GameObject scene;
     private GameObject player;
     private Rigidbody body;
-    public Player playerSync;
-    public SyncServerDown syncServerDownPlayer;
 
     private List<Player> players;
     private List<Object> objects;
@@ -139,7 +145,7 @@ public class Game : MonoBehaviour
     {
     	playerSync.transform.name = Name.text;
     	playerSync.transform.force = Vector3.zero;
-    	player.transform.GetChild(1).GetComponent<TextMesh>().text = playerSync.transform.name;
+    	player.transform.GetChild(0).GetComponent<TextMesh>().text = playerSync.transform.name;
     	string json = JsonUtility.ToJson(playerSync);
 	    string request = "{\"msgid\":10003, \"client\":"+json+"}";
 	    Send(request); 
@@ -150,6 +156,7 @@ public class Game : MonoBehaviour
         if(scene != null)
         {
             GameObject __player = Instantiate(TemplatePlayer, scene.transform, false);
+            __player.transform.localPosition = Respawn.transform.localPosition;
             SyncServerDown __syncPlayer = __player.GetComponent<SyncServerDown>();
             __syncPlayer.SetPlayer(_player);
             _player.Create(__player);
@@ -190,9 +197,11 @@ public class Game : MonoBehaviour
         player = GameObject.Find("Player").gameObject;
         body = player.GetComponent<Rigidbody>();
         syncServerDownPlayer = player.GetComponent<SyncServerDown>();
+        player.transform.localPosition = Respawn.transform.localPosition;
 
         playerSync = new Player();
         playerSync.transform.name = Name.text;
+        playerSync.transform.position = Respawn.transform.localPosition;
         syncServerDownPlayer.SetPlayer(playerSync);
 
     	client = new UdpClient(IP, Port);
@@ -303,10 +312,7 @@ public class Game : MonoBehaviour
                 			players[id].transform.Set(request_object.client.transform);
                 		else
                 			if(playerSync.ip == request_object.client.ip)
-                			{
-                				print(JsonUtility.ToJson(request_object.client.transform));
                 				playerSync.transform.Set(request_object.client.transform);
-                			}
                 	}
                 	break;
                     case 10004: //objects
@@ -317,7 +323,6 @@ public class Game : MonoBehaviour
                     break;
                     case 10005: // update object
                     {
-                        print(text);
                         RequestObject request_object = JsonUtility.FromJson<RequestObject>(text);
                         int id = objects.FindIndex(s => s.name == request_object.obj.name);
                         if (id > -1)

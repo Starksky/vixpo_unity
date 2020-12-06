@@ -8,7 +8,8 @@ public class SyncServerUp : MonoBehaviour
 	private GameServer game_server;
 	private Client client;
 	private Rigidbody body;
-    private long currentPack = -1;
+    private long currentPack = 0;
+    private bool isSend = false;
 
     // Start is called before the first frame update
     void Start()
@@ -23,8 +24,8 @@ public class SyncServerUp : MonoBehaviour
         {
             if (client.isExit()) return;
 
-            //if(client.transform.force != Vector3.zero)
-            //{
+            if(isSend)
+            {
                 string response;
                 string json_client;
 
@@ -34,8 +35,9 @@ public class SyncServerUp : MonoBehaviour
                 json_client = JsonUtility.ToJson(client);
                 response = "{\"msgid\":10003, \"client\":" + json_client + "}";
                 client.Send(game_server.server, response);
-                             
-            //}
+
+                isSend = false;
+            }
  
         }
     }
@@ -47,15 +49,14 @@ public class SyncServerUp : MonoBehaviour
         {
             if (client.isExit()) return;
 
-            //if(client.transform.force != Vector3.zero)
-            //{
-                //body.velocity = Vector3.zero;
+            if(client.transform.force != Vector3.zero)
+            {
+                body.velocity = Vector3.zero;
                 body.AddForce(client.transform.force, ForceMode.Impulse);
-                client.transform.force = Vector3.zero; 
-            //}
-
-            //body.position = client.transform.position;
-            //body.rotation = Quaternion.Euler(client.transform.rotation);
+                client.transform.force = Vector3.zero;
+                isSend = true;
+            }
+            else body.velocity = Vector3.zero;
         }
     }
 

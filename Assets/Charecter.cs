@@ -16,7 +16,8 @@ public class Charecter : MonoBehaviour
     private GameObject menu;
     private Game game;
     private Rigidbody body;
-    
+	private SyncServerDown syncPlayer;
+
     private void SendForce(Vector3 force)
     {
 		if(game.isInit)
@@ -24,11 +25,9 @@ public class Charecter : MonoBehaviour
             game.playerSync.transform.force = force;
         	string json = JsonUtility.ToJson(game.playerSync);
         	string request = "{\"msgid\":10003, \"client\":"+json+"}";
-            game.Send(request); 
-
-        }
-
-        print("SendForce");
+			syncPlayer.AddTempTransform(game.playerSync.transform);
+			game.Send(request);	
+		}   
     }
 
 	// Start is called before the first frame update
@@ -38,6 +37,7 @@ public class Charecter : MonoBehaviour
         menu = GameObject.Find("Menu").gameObject;
         game = GameObject.Find("Game").gameObject.GetComponent<Game>();
         body = GetComponent<Rigidbody>();
+		syncPlayer = GetComponent<SyncServerDown>();
 	}
 	void Update()
 	{
@@ -54,15 +54,12 @@ public class Charecter : MonoBehaviour
         	menu.SetActive(false);
         	Vector3 force = Vector3.zero;
 
-        	SendForce(force);
 			if (Input.GetAxis("Vertical") != 0)
 		    {
 				body.velocity = Vector3.zero;
 				Vector3 direction = camera.transform.TransformDirection(Vector3.forward);
-				force = direction.normalized * Input.GetAxis("Vertical") * FlySpeed;
+				force += direction.normalized * Input.GetAxis("Vertical") * FlySpeed;
 				body.AddForce(direction.normalized * Input.GetAxis("Vertical") * FlySpeed, ForceMode.Impulse);
-
-				SendForce(force);
 			}
 		   
 		   
@@ -70,13 +67,14 @@ public class Charecter : MonoBehaviour
 		    {
 				body.velocity = Vector3.zero;
 				Vector3 direction = camera.transform.TransformDirection(Vector3.right);
-				force = direction.normalized * Input.GetAxis("Horizontal") * FlySpeed;
+				force += direction.normalized * Input.GetAxis("Horizontal") * FlySpeed;
 				body.AddForce(direction.normalized * Input.GetAxis("Horizontal") * FlySpeed, ForceMode.Impulse);
-
-				SendForce(force);
 			}
 
-			if(Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)
+			if(force != Vector3.zero)
+				SendForce(force);
+
+			if (Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)
 				body.velocity = Vector3.zero;
 
 			//ensure these stay this way
