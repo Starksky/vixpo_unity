@@ -13,7 +13,7 @@ public class Charecter : MonoBehaviour
     public float maxYAngle = 80f;
     private Vector3 currentRotation;
     private bool isPause = false;
-    private GameObject menu;
+    
     private Game game;
     private Rigidbody body;
 	private SyncServerDown syncPlayer;
@@ -34,7 +34,7 @@ public class Charecter : MonoBehaviour
 	void Start()
     {
         currentRotation = transform.eulerAngles;
-        menu = GameObject.Find("Menu").gameObject;
+
         game = GameObject.Find("Game").gameObject.GetComponent<Game>();
         body = GetComponent<Rigidbody>();
 		syncPlayer = GetComponent<SyncServerDown>();
@@ -46,12 +46,12 @@ public class Charecter : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.M))
             isPause = !isPause;
 
         if(!isPause)
         {
-        	menu.SetActive(false);
+
         	Vector3 force = Vector3.zero;
 
 			if (Input.GetAxis("Vertical") != 0)
@@ -94,7 +94,7 @@ public class Charecter : MonoBehaviour
 			if (Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)
 				body.velocity = Vector3.zero;
 
-			menu.SetActive(true);
+			
         	Cursor.lockState = CursorLockMode.None;
 	        Cursor.visible = true;
         }
