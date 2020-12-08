@@ -13,7 +13,10 @@ public class Charecter : MonoBehaviour
     public float maxYAngle = 80f;
     private Vector3 currentRotation;
     private bool isPause = false;
-    
+    Vector3 position;
+    private bool isMove = false;
+    private bool isResp = false;
+    private string pointName;
     private Game game;
     private Rigidbody body;
 	private SyncServerDown syncPlayer;
@@ -38,15 +41,19 @@ public class Charecter : MonoBehaviour
         game = GameObject.Find("Game").gameObject.GetComponent<Game>();
         body = GetComponent<Rigidbody>();
 		syncPlayer = GetComponent<SyncServerDown>();
+		position = gameObject.transform.position;
 	}
 	void Update()
 	{
-
+        if(isMove)	
+        {
+        	gameObject.transform.position = Vector3.Lerp(gameObject.transform.position, position, 0.1f); 
+        }
 	}
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.M))
+        if (Input.GetKeyDown(KeyCode.Escape))
             isPause = !isPause;
 
         if(!isPause)
@@ -99,5 +106,22 @@ public class Charecter : MonoBehaviour
 	        Cursor.visible = true;
         }
 
+    }
+
+    public void MoveTo(Vector3 pos, string name)
+    {
+    	position = pos;
+    	pointName = name;
+    	isMove = true;
+    }
+
+    void OnTriggerEnter(Collider col)
+    {
+
+    }
+    void OnTriggerStay(Collider col)
+    {
+		if (col.gameObject.name == pointName)
+			isMove = false;
     }
 }
