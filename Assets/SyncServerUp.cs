@@ -10,6 +10,9 @@ public class SyncServerUp : MonoBehaviour
 	private Rigidbody body;
     private long currentPack = 0;
     private bool isSend = false;
+    private bool isMove = false;
+    private string pointName;
+    private Vector3 pointPosition;
 
     // Start is called before the first frame update
     void Start()
@@ -49,6 +52,12 @@ public class SyncServerUp : MonoBehaviour
         {
             if (client.isExit()) return;
 
+            if(isMove)
+            {
+                body.position = Vector3.Lerp(body.position, pointPosition, 0.1f);
+                isSend = true;
+            }
+
             if(client.transform.force != Vector3.zero)
             {
                 body.velocity = Vector3.zero;
@@ -61,4 +70,19 @@ public class SyncServerUp : MonoBehaviour
     }
 
     public void SetClient(Client _c){ client = _c; }
+    public void MoveTo(string name)
+    {
+        GameObject point = GameObject.Find(name);
+        if(point != null)
+        {
+            pointPosition = GameObject.Find(name).transform.position;
+            pointName = name;
+            isMove = true;            
+        }
+    }
+    void OnTriggerStay(Collider col)
+    {
+        if (col.gameObject.name == pointName)
+            isMove = false;
+    }
 }

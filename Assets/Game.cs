@@ -190,6 +190,8 @@ public class Game : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+    	PlayerPrefs.SetInt("Server", 0);
+    	
     	players = new List<Player>();
         objects = new List<Object>();
 

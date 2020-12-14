@@ -21,6 +21,7 @@ using UnityEngine.UI;
     public Object transform;
 
     private GameObject player;
+    private SyncServerUp syncPlayer;
 
     public Client(EndPoint _p){
         point = _p; 
@@ -35,10 +36,11 @@ using UnityEngine.UI;
         server.SendTo(sendBytes, point);
     }
 
-    public void Add(GameObject _player){ _isAdd = true; player = _player; }
+    public void Add(GameObject _player){ _isAdd = true; player = _player; syncPlayer = _player.GetComponent<SyncServerUp>(); }
     public void Remove(){ GameObject.Destroy(player); _isExit = true; Debug.Log("remove player");  }
     public bool isAdd(){ return _isAdd; }
     public bool isExit() { return _isExit; }
+    public SyncServerUp GetSyncServerUp() { return syncPlayer; }
 }
 
 public class ReceiveRequest{
@@ -62,6 +64,12 @@ public class GameServer : MonoBehaviour
 
     private GameObject scene;
 
+    struct _10002
+    {
+        public int msgid;
+        public string name;
+    }
+
     public long GetTimestamp()
     {
         return (long)(new TimeSpan(DateTime.Now.Ticks)).TotalSeconds;
@@ -82,6 +90,7 @@ public class GameServer : MonoBehaviour
 
     void Start()
     {
+        PlayerPrefs.SetInt("Server", 1);
         scene = GameObject.Find("Game").gameObject;
 
         clients = new List<Client>();
@@ -260,6 +269,16 @@ public class GameServer : MonoBehaviour
                     clients.Add(client);
 
                     print("Add client -> " + client.ip);
+                }
+                break;
+                case 10002:
+                {
+                    _10002 request_10002 = JsonUtility.FromJson<_10002>(receive.request);
+                    Client client = new Client(receive.point);
+                    int id = clients.FindIndex(s => s.ip == client.ip);
+
+                    if(id > -1)
+                        clients[id].GetSyncServerUp().MoveTo(request_10002.name);
                 }
                 break;
                 case 10003:
