@@ -25,7 +25,7 @@ public class SyncServerDown : MonoBehaviour
         {
             name.text = player.transform.name;
             
-            if (currentPack > player.transform.pack) return;
+            if (currentPack >= player.transform.pack) return;
 
             body.position = Vector3.Lerp(body.position, player.transform.position, speed);
             body.rotation = Quaternion.Lerp(body.rotation, Quaternion.Euler(player.transform.rotation), speed);

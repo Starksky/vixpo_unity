@@ -65,6 +65,7 @@ public class Charecter : MonoBehaviour
 		    {
 				body.velocity = Vector3.zero;
 				Vector3 direction = camera.transform.TransformDirection(Vector3.forward);
+				direction.y = 0;
 				force += direction.normalized * Input.GetAxis("Vertical") * FlySpeed;
 				body.AddForce(direction.normalized * Input.GetAxis("Vertical") * FlySpeed, ForceMode.Impulse);
 			}
@@ -81,8 +82,8 @@ public class Charecter : MonoBehaviour
 			if(force != Vector3.zero)
 				SendForce(force);
 
-			if (Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)
-				body.velocity = Vector3.zero;
+			//if (Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)
+			//	body.velocity = Vector3.zero;
 
 			//ensure these stay this way
 			Cursor.lockState = CursorLockMode.Locked;
@@ -98,8 +99,8 @@ public class Charecter : MonoBehaviour
         }
         else
         {
-			if (Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)
-				body.velocity = Vector3.zero;
+			//if (Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)
+			//	body.velocity = Vector3.zero;
 
 			
         	Cursor.lockState = CursorLockMode.None;
